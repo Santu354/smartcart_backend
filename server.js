@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import bodyParser from "body-parser";
+import productRoutes from "./routes/products.js";
 
 const app = express();
 app.use(cors());
@@ -9,7 +10,6 @@ app.use(express.json());
 app.use(bodyParser.json());
 
 // ✅ Existing routes
-import productRoutes from "./routes/products.js";
 app.use("/api/products", productRoutes);
 
 // ✅ New AI Chat route
@@ -21,12 +21,14 @@ app.post("/api/chat", async (req, res) => {
     }
 
     console.log("🟣 User Message:", userMessage);
-    console.log("🔑 Using GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? "Loaded ✅" : "❌ Missing");
+    console.log(
+      "🔑 Using GEMINI_API_KEY:",
+      process.env.GEMINI_API_KEY ? "Loaded ✅" : "❌ Missing"
+    );
 
-    // 🔹 Use Gemini API (secured)
+    // ✅ Use Gemini API (secured)
     const response = await fetch(
-     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
-
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -37,7 +39,7 @@ app.post("/api/chat", async (req, res) => {
     );
 
     const data = await response.json();
-    console.log("🟢 Gemini Raw Response:", JSON.stringify(data, null, 2)); // 👈 add this line
+    console.log("🟢 Gemini Raw Response:", JSON.stringify(data, null, 2));
 
     const aiReply =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
