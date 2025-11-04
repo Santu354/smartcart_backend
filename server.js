@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import fetch from "node-fetch"; // if not installed: npm install node-fetch
+import fetch from "node-fetch";
 import bodyParser from "body-parser";
 
 const app = express();
@@ -20,9 +20,9 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // 🔹 Use Gemini API
+    // 🔹 Use Gemini API (secured)
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyDQQiBGgx79nSKNyZiBhFYa-Ozny-Euy1g",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,4 +45,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+console.log("✅ GEMINI_API_KEY loaded:", !!process.env.GEMINI_API_KEY);
+console.log("✅ Current Environment:", process.env.NODE_ENV || "development");
+
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
