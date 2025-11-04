@@ -1,51 +1,48 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const productRoutes = require("./routes/products");
-require("dotenv").config();
-
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch"; // if not installed: npm install node-fetch
+import bodyParser from "body-parser";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
 
-// ✅ Serve uploaded images (optional)
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// ✅ Product routes
+// ✅ Existing routes
+import productRoutes from "./routes/products.js";
 app.use("/api/products", productRoutes);
 
-// ✅ Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-
-// 🔹 AI Chat Endpoint — gives intelligent real-time answers
+// ✅ New AI Chat route
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ reply: "No message received." });
+    const userMessage = req.body.message;
+    if (!userMessage) {
+      return res.status(400).json({ error: "Message is required" });
+    }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // 🔹 Use Gemini API
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyDQQiBGgx79nSKNyZiBhFYa-Ozny-Euy1g",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: userMessage }] }],
+        }),
+      }
+    );
 
-    const prompt = `
-      You are SmartCart AI — a friendly shopping assistant.
-      The user said: "${message}".
-      Give a helpful, short, and real-time answer about the product, deals, or tips.
-      Keep it conversational and avoid code or long lists.
-    `;
+    const data = await response.json();
+    const aiReply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I couldn’t get an answer right now.";
 
-    const result = await model.generateContent(prompt);
-    const reply = result.response.text();
-
-    res.json({ reply });
+    res.json({ reply: aiReply });
   } catch (error) {
-    console.error("❌ AI Error:", error);
-    res.status(500).json({ reply: "Sorry, I couldn’t get that right now. Try again later!" });
+    console.error("AI Chat Error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// ✅ Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
