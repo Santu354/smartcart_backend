@@ -20,6 +20,9 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
+    console.log("🟣 User Message:", userMessage);
+    console.log("🔑 Using GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? "Loaded ✅" : "❌ Missing");
+
     // 🔹 Use Gemini API (secured)
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -33,13 +36,15 @@ app.post("/api/chat", async (req, res) => {
     );
 
     const data = await response.json();
+    console.log("🟢 Gemini Raw Response:", JSON.stringify(data, null, 2)); // 👈 add this line
+
     const aiReply =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Sorry, I couldn’t get an answer right now.";
 
     res.json({ reply: aiReply });
   } catch (error) {
-    console.error("AI Chat Error:", error);
+    console.error("❌ AI Chat Error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
